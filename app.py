@@ -2,10 +2,11 @@ from flask import Flask, request, jsonify
 from models.user import User
 from database import db
 from flask_login import LoginManager, login_user, current_user, logout_user, login_required
+import bcrypt
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:admin@217.0.0.1:3306/'
 
 login_manager = LoginManager()
 db.init_app(app)
@@ -29,7 +30,7 @@ def login():
     if not username or not password:
         return jsonify({'error': 'Missing username or password'}), 400
     user = User.query.filter_by(username=username).first()
-    if user and user.password == password:
+    if user and user.password == hashed_password:
         login_user(user)
         print(current_user.is_authenticated)
         return jsonify({'message': 'Logged in'}), 200
@@ -46,6 +47,8 @@ def logout():
 
 @app.route('/user', methods=['POST'])
 def create_user():
+    global hashed_password 
+    hashed_password = bcrypt.hashpw(str.encode[password], bcrypt.gensalt())
     global is_admin
     data = request.json
     username = data.get('username')
